@@ -1,6 +1,7 @@
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import DashboardLayout from "@/components/DashboardLayout";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -9,11 +10,18 @@ const outfit = Outfit({
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${outfit.variable} dark`}>
+    <html lang="en" className={outfit.variable} suppressHydrationWarning>
       <body className="antialiased font-sans">
-        <DashboardLayout>
-          {children}
-        </DashboardLayout>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <DashboardLayout>
+            {children}
+          </DashboardLayout>
+        </ThemeProvider>
       </body>
     </html>
   );
