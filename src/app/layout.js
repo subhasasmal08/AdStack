@@ -1,7 +1,7 @@
 import { Outfit } from "next/font/google";
 import "./globals.css";
-import DashboardLayout from "@/components/DashboardLayout";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Toaster } from "sonner";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -18,9 +18,8 @@ export default function RootLayout({ children }) {
           enableSystem
           disableTransitionOnChange
         >
-          <DashboardLayout>
-            {children}
-          </DashboardLayout>
+          {children}
+          <Toaster position="top-right" richColors />
         </ThemeProvider>
       </body>
     </html>

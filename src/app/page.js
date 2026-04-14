@@ -1,10 +1,14 @@
-import React from 'react'
+"use client";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-export default function page() {
-  return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-4xl font-bold tracking-tight">Dashboard Overview</h1>
-      <p className="text-muted-foreground text-lg">Welcome to your AdStack workspace.</p>
-    </div>
-  )
+export default function RootPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // By default, redirect to login page
+    router.replace('/login');
+  }, [router]);
+
+  return null;
 }
