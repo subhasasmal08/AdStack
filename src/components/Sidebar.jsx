@@ -127,8 +127,8 @@ const Sidebar = () => {
                     <span className={cn(
                       "px-2.5 py-0.5 rounded-full text-[11px] font-bold min-w-[24px] text-center transition-all duration-300",
                       item.label === "Alerts" 
-                        ? (theme === "dark" ? "bg-[#1E1616] text-[#FF5D5D]" : "bg-red-50 text-red-500") 
-                        : (theme === "dark" ? "bg-[#18182B] text-[#5C59E8]" : "bg-blue-50 text-blue-500")
+                        ? (mounted && theme === "dark" ? "bg-[#1E1616] text-[#FF5D5D]" : "bg-red-50 text-red-500") 
+                        : (mounted && theme === "dark" ? "bg-[#18182B] text-[#5C59E8]" : "bg-blue-50 text-blue-500")
                     )}>
                       {item.badge}
                     </span>
