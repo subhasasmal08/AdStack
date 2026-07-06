@@ -1,48 +1,80 @@
 "use client";
-import React, { useState } from 'react';
-import Link from 'next/link';
-import AuthCard from '@/components/auth/AuthCard';
-import InputField from '@/components/auth/InputField';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
+import React, { useState } from "react";
+import Link from "next/link";
+import AuthCard from "@/components/auth/AuthCard";
+import InputField from "@/components/auth/InputField";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { useGoogleLogin } from "@react-oauth/google";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const router = useRouter();
+  const ADMOB_SCOPE = "https://www.googleapis.com/auth/admob.readonly";
+
+  const [status, setStatus] = useState("idle");
+  const [apps, setApps] = useState([]);
+
+  const login = useGoogleLogin({
+    scope: ADMOB_SCOPE,
+    onSuccess: async (tokenResponse) => {
+      console.log(tokenResponse);
+      setStatus("loading");
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_KEY}/apps`, {
+          headers: {
+            Authorization: `Bearer ${tokenResponse.access_token}`,
+            "x-api-key": process.env.NEXT_PUBLIC_API_KEY,
+          },
+        });
+        if (!res.ok) throw new Error("Failed to fetch apps");
+        const data = await res.json();
+        setApps(data.apps);
+        setStatus("connected");
+      } catch {
+        setStatus("error");
+      }
+    },
+    onError: () => setStatus("error"),
+  });
 
   const validateEmail = (email) => {
     return String(email)
       .toLowerCase()
       .match(
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
       );
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!validateEmail(email)) {
-      toast.error('Please enter a valid email address');
+      toast.error("Please enter a valid email address");
       return;
     }
 
     if (password.length < 6) {
-      toast.error('Password must be at least 6 characters long');
+      toast.error("Password must be at least 6 characters long");
       return;
     }
 
-    toast.success('Successfully signed in!');
-    router.push('/chatbot'); // Redirect to dashboard
+    toast.success("Successfully signed in!");
+    router.push("/chatbot"); // Redirect to dashboard
   };
 
   return (
     <AuthCard>
       <div className="space-y-8">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight text-primary">AdStack</h1>
-          <p className="text-muted-foreground">Sign in to manage your ad inventory and analytics.</p>
+          <h1 className="text-4xl font-bold tracking-tight text-primary">
+            AdStack
+          </h1>
+          <p className="text-muted-foreground">
+            Sign in to manage your ad inventory and analytics.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -67,8 +99,8 @@ export default function LoginPage() {
               required
             />
             <div className="flex justify-end">
-              <Link 
-                href="/forgot-password" 
+              <Link
+                href="/forgot-password"
                 className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
               >
                 Forgot password?
@@ -82,13 +114,56 @@ export default function LoginPage() {
           >
             Sign In
           </Button>
+
+          {/* <div>
+            {status === "idle" && (
+              <button onClick={() => login()}>Connect AdMob Account</button>
+            )}
+
+            {status === "loading" && <p>Fetching your apps...</p>}
+
+            {status === "error" && (
+              <>
+                <p>Something went wrong.</p>
+                <button
+                  onClick={() => {
+                    setStatus("idle");
+                    setApps([]);
+                  }}
+                >
+                  Try again
+                </button>
+              </>
+            )}
+
+            {status === "connected" && (
+              <>
+                <p>Connected! Found {apps.length} app(s).</p>
+                <ul>
+                  {apps.map((app) => (
+                    <li key={app.app_id}>
+                      {app.name} — {app.platform}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => {
+                    setStatus("idle");
+                    setApps([]);
+                  }}
+                >
+                  Disconnect
+                </button>
+              </>
+            )}
+          </div> */}
         </form>
 
         <div className="pt-4 text-center">
           <p className="text-muted-foreground">
-            No account?{' '}
-            <Link 
-              href="/signup" 
+            No account?{" "}
+            <Link
+              href="/signup"
               className="text-primary font-semibold hover:underline decoration-2 underline-offset-4"
             >
               Create one
