@@ -6,12 +6,15 @@ import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { cn } from "@/lib/utils";
 import { 
-  Bot, 
-  LayoutGrid, 
-  TriangleAlert, 
-  FileText, 
-  Settings, 
-  Search, 
+  Grid,
+  LayoutGrid,
+  LineChart,
+  TrendingUp,
+  Bell,
+  MessageSquare,
+  Settings,
+  Search,
+  Plus,
   Sun,
   Moon,
   ChevronDown,
@@ -21,28 +24,29 @@ import {
   Crown,
   Shield,
   Globe,
+  FileText,
   LogOut
 } from "lucide-react";
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
 const navItems = [
-  { icon: Bot, label: "AI Chatbot", href: "/chatbot" },
-  { icon: LayoutGrid, label: "My Apps", href: "/apps", badge: 2 },
-  { icon: TriangleAlert, label: "Alerts", href: "/alerts", badge: 3 },
+  { icon: LayoutGrid, label: "Apps", href: "/apps", badge: 6 },
+  { icon: Bell, label: "Alerts", href: "/alerts", badge: 1 },
+  { icon: MessageSquare, label: "AI Chat", href: "/chatbot" },
   { icon: FileText, label: "Reports", href: "/reports" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
 const menuItems = [
-  { icon: User, label: "Profile", href: "#" },
-  { icon: Clock, label: "Activity Log", href: "#" },
-  { icon: HelpCircle, label: "Help", href: "#" },
-  { icon: Crown, label: "Upgrade Plan", href: "#", color: "text-brand" },
-  { icon: Shield, label: "Security", href: "#" },
+  { icon: User, label: "Profile", href: "/profile" },
+  { icon: Clock, label: "Activity Log", href: "/log" },
+  { icon: HelpCircle, label: "Help", href: "/help" },
+  { icon: Crown, label: "Upgrade Plan", href: "/plans", color: "text-brand" },
+  { icon: Shield, label: "Security", href: "/security" },
   { type: "divider" },
-  { icon: Globe, label: "Privacy Policy", href: "#" },
-  { icon: FileText, label: "Terms of Service", href: "#" },
+  { icon: Globe, label: "Privacy Policy", href: "/privacy" },
+  { icon: FileText, label: "Terms of Service", href: "/terms" },
   { type: "divider" },
   { icon: LogOut, label: "Sign Out", href: "/login", isLogout: true },
 ];
@@ -86,19 +90,20 @@ const Sidebar = () => {
             {!mounted && <Sun size={18} className="text-sidebar-foreground" />}
           </button>
         </div>
-        <div className="flex items-center gap-2 text-sm text-nav-label cursor-pointer hover:text-sidebar-foreground transition-colors group">
+        <div 
+          onClick={() => window.dispatchEvent(new CustomEvent('toggle-command-palette'))}
+          className="flex items-center gap-2 text-sm text-nav-label cursor-pointer hover:text-sidebar-foreground transition-colors group"
+        >
           <Search size={18} className="group-hover:scale-110 transition-transform" />
           <span className="font-medium">⌘K</span>
         </div>
       </div>
 
-      <div className="px-8 mt-6">
-         <h2 className="text-[11px] font-bold tracking-[0.2em] text-[#475569] dark:text-[#475569] light:text-slate-400 uppercase">
+      <div className="flex-1 overflow-y-auto px-4 py-4 mt-2 space-y-6">
+        <div>
+          <h2 className="px-4 text-[11px] font-bold tracking-[0.2em] text-[#475569] dark:text-[#475569] uppercase mb-2">
             Navigation
           </h2>
-      </div>
-
-      <div className="flex-1 px-4 py-4 mt-2">
           <nav className="space-y-1.5">
             {navItems.map((item) => {
               const isActive = pathname === item.href || (item.href === "/apps" && pathname === "/");
@@ -137,6 +142,37 @@ const Sidebar = () => {
               );
             })}
           </nav>
+        </div>
+
+        <div>
+          <h2 className="px-4 text-[11px] font-bold tracking-[0.2em] text-[#475569] dark:text-[#475569] uppercase mb-2">
+            Shortcuts
+          </h2>
+          <nav className="space-y-1.5">
+            <div
+              className="flex items-center justify-between px-4 py-3 rounded-2xl cursor-pointer transition-all duration-300 group hover:bg-sidebar-accent/50 text-sidebar-foreground"
+              onClick={() => window.dispatchEvent(new CustomEvent('toggle-command-palette'))}
+            >
+              <div className="flex items-center gap-4">
+                <Search size={22} className="text-nav-label group-hover:text-sidebar-accent-foreground transition-colors duration-300" />
+                <span className="text-[15px] font-semibold tracking-wide">Command palette</span>
+              </div>
+              <span className="border border-border-sidebar px-1.5 py-0.5 rounded text-[11px] font-mono text-nav-label">
+                ⌘K
+              </span>
+            </div>
+
+            <Link
+              href="/apps"
+              className="flex items-center justify-between px-4 py-3 rounded-2xl cursor-pointer transition-all duration-300 group hover:bg-sidebar-accent/50 text-sidebar-foreground"
+            >
+              <div className="flex items-center gap-4">
+                <Plus size={22} className="text-nav-label group-hover:text-sidebar-accent-foreground transition-colors duration-300" />
+                <span className="text-[15px] font-semibold tracking-wide">Register app</span>
+              </div>
+            </Link>
+          </nav>
+        </div>
       </div>
 
       <div className="p-4 border-t border-border-sidebar/50 bg-sidebar/50 backdrop-blur-sm relative">
@@ -153,7 +189,11 @@ const Sidebar = () => {
                   <button
                     key={item.label}
                     onClick={() => {
-                      if (isSignOut) handleLogout();
+                      if (isSignOut) {
+                        handleLogout();
+                      } else {
+                        router.push(item.href);
+                      }
                       setIsMenuOpen(false);
                     }}
                     className={cn(

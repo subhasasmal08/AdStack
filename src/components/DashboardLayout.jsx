@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Sidebar from './Sidebar';
+import CommandPalette from './CommandPalette';
 import { usePathname } from 'next/navigation';
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ const DashboardLayout = ({ children }) => {
           {children}
         </div>
       </main>
+      <CommandPalette />
     </div>
   );
 };
