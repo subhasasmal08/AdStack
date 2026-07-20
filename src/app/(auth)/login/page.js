@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useGoogleLogin } from "@react-oauth/google";
+import { axiosapiinstance, setTokens } from "@/lib/request";
+import { ENDPOINTS } from "@/lib/endpoints";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -48,7 +50,7 @@ export default function LoginPage() {
       );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateEmail(email)) {
@@ -61,8 +63,27 @@ export default function LoginPage() {
       return;
     }
 
-    toast.success("Successfully signed in!");
-    router.push("/chatbot"); // Redirect to dashboard
+    try {
+      // The backend expects 'email' and 'password' to be passed in the headers rather than the body.
+      const response = await axiosapiinstance.post(ENDPOINTS.AUTH.LOGIN, {}, {
+        headers: {
+          email: email,
+          password: password,
+        }
+      });
+
+      // Assuming the response structure you provided
+      const data = response.data;
+      if (data && data.detail && data.detail.access_token) {
+        setTokens(data.detail.access_token, data.detail.refresh_token);
+        toast.success("Successfully signed in!");
+        router.push("/chatbot"); // Redirect to dashboard
+      } else {
+        toast.error("Invalid response from server");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.response?.data?.detail || "Login failed");
+    }
   };
 
   return (

@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { axiosapiinstance, clearTokens } from "@/lib/request";
+import { ENDPOINTS } from "@/lib/endpoints";
 
 const navItems = [
   { icon: LayoutGrid, label: "Apps", href: "/apps", badge: 6 },
@@ -66,9 +68,16 @@ const Sidebar = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
-  const handleLogout = () => {
-    toast.success('Signed out successfully');
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      await axiosapiinstance.post(ENDPOINTS.AUTH.LOGOUT);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      clearTokens();
+      toast.success('Signed out successfully');
+      router.push('/login');
+    }
   };
 
   return (
