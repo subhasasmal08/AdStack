@@ -10,9 +10,11 @@ import AppCard from './components/AppCard';
 import AppRow from './components/AppRow';
 import AppDetails from './components/AppDetails';
 import RegisterWizard from './components/RegisterWizard';
+import { axiosapiinstance } from '@/lib/request';
+import { ENDPOINTS } from '@/lib/endpoints';
 
 // ══════════════ CONSTANTS ══════════════
-const NETWORKS = ["AdMob", "AppLovin", "Unity Ads", "Meta Audience Network", "ironSource", "Chartboost"];
+const NETWORKS = ["AdMob"];
 const APP_CATEGORIES = ["Gaming", "Utility", "Content / Media", "Social / Community", "Productivity", "Education", "Finance", "Health & Fitness", "Other"];
 const APP_AGES = ["< 6 months", "6-12 months", "1-3 years", "3+ years"];
 const LOCATIONS = ["North America", "Europe", "Asia Pacific", "Latin America", "Middle East & Africa", "India", "Southeast Asia", "China"];
@@ -400,30 +402,42 @@ export default function AppsPage() {
   };
 
   // ══════════════ REGISTRATION FLOW WIZARD ══════════════
-  const startFetch = () => {
-    if (!ssp || !apiKey) return;
+  const startFetch = async (token) => {
+    if (!ssp) return;
+    if (token) setApiKey(token);
+    
     setFetching(true);
     setFetchStep(1);
     
-    setTimeout(() => {
+    try {
+      const res = await axiosapiinstance.post(ENDPOINTS.APPS.UPLOADED, {
+        ad_network: "admob",
+        secret_key: null
+      });
+      
+      const data = res.data;
+      // Use backend data from detail array
+      const fetchedList = Array.isArray(data?.detail) ? data.detail : [];
+
       setFetchStep(2);
       setTimeout(() => {
         setFetchStep(3);
         setTimeout(() => {
           setFetchStep(4);
           setFetching(false);
-          setFApps(FETCHED_APPS);
+          setFApps(fetchedList);
           
           const initialData = {};
-          FETCHED_APPS.forEach(a => {
-            initialData[a.name] = {
+          fetchedList.forEach((a, i) => {
+            const appName = a.name || `App ${i+1}`;
+            initialData[appName] = {
               net: ssp,
-              key: apiKey,
-              app: a.name,
-              plat: a.platform,
-              cats: [a.cat],
-              val: a.val,
-              age: a.age,
+              key: token || apiKey,
+              app: appName,
+              plat: a.platform || "Android",
+              cats: a.cat ? [a.cat] : ["Other"],
+              val: a.val || "",
+              age: a.age || "",
               amin: a.amin || "",
               amax: a.amax || "",
               gens: a.gens || [],
@@ -446,10 +460,15 @@ export default function AppsPage() {
             };
           });
           setAppData(initialData);
-          toast.success(`Successfully fetched ${FETCHED_APPS.length} apps from ${ssp}`);
-        }, 1000);
-      }, 1000);
-    }, 900);
+          toast.success(`Successfully fetched ${fetchedList.length} apps from ${ssp}`);
+        }, 800);
+      }, 800);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to fetch apps from backend");
+      setFetching(false);
+      setFetchStep(0);
+    }
   };
 
   const toggleSelectRegApp = (name) => {

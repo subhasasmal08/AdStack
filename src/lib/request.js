@@ -61,6 +61,20 @@ const axiosapiinstance = axios.create({
   },
 });
 
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 // Request interceptor to attach access token
 axiosapiinstance.interceptors.request.use(
   (config) => {
@@ -81,25 +95,43 @@ axiosapiinstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // If error is 401 and we haven't retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // If error is 401 or 403 and we haven't retried yet
+    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
+      
+      if (isRefreshing) {
+        return new Promise(function(resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers['Authorization'] = `Bearer ${token}`;
+          return axiosapiinstance(originalRequest);
+        }).catch(err => {
+          return Promise.reject(err);
+        });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
       const refreshToken = getRefreshToken();
 
       if (refreshToken) {
         try {
-          // Call refresh token API
+          // Call refresh token API with token in both header and body (to satisfy FastAPI validation)
           const res = await axios.post(`${API_BASE_URL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`, {
             refresh_token: refreshToken
+          }, {
+            headers: {
+              'Authorization': `Bearer ${refreshToken}`,
+              'Content-Type': 'application/json'
+            }
           });
           
-          // Depending on the exact structure, assuming it matches the login response pattern:
-          // res.data.detail.access_token
           const newAccessToken = res.data?.detail?.access_token || res.data?.access_token;
           const newRefreshToken = res.data?.detail?.refresh_token || res.data?.refresh_token || refreshToken;
 
           if (newAccessToken) {
               setTokens(newAccessToken, newRefreshToken);
+              
+              processQueue(null, newAccessToken);
               
               // Update Authorization header for original request
               originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
@@ -109,11 +141,14 @@ axiosapiinstance.interceptors.response.use(
           }
         } catch (refreshError) {
           // If refresh token fails, clear tokens and redirect to login
+          processQueue(refreshError, null);
           clearTokens();
           if (typeof window !== 'undefined') {
             window.location.href = '/login'; // Adjust to your login route
           }
           return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
         }
       } else {
         // No refresh token, redirect to login

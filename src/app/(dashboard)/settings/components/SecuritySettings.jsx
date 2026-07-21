@@ -5,6 +5,8 @@ import { Lock, Shield, Monitor, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import Toggle from "@/components/ui/Toggle";
 import { toast } from 'sonner';
+import { axiosapiinstance } from '@/lib/request';
+import { ENDPOINTS } from '@/lib/endpoints';
 
 const DEVICES = [
   { id: "DEV-A7X2K9", os: "Windows 11", loc: "Mumbai, MH, India", mac: "3C:22:FB:01:AB:C8", current: true },
@@ -21,19 +23,43 @@ export default function SecuritySettings({ onAddLog }) {
 
   const [pwVisible, setPwVisible] = useState({ old: false, new1: false, new2: false });
 
-  const handleUpdatePw = () => {
+  const validatePassword = (password) => {
+    const hasMinLength = password.length >= 6;
+    const hasCapital = /[A-Z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    return hasMinLength && hasCapital && hasNumber && hasSpecial;
+  };
+
+  const handleUpdatePw = async () => {
     if (!pw.old || !pw.new1 || !pw.new2) {
       toast.error("Please fill in all password fields");
+      return;
+    }
+    
+    if (!validatePassword(pw.new1)) {
+      toast.error('New password must be at least 6 characters long and include one capital letter, one number, and one special character.');
       return;
     }
     if (pw.new1 !== pw.new2) {
       toast.error("New passwords do not match");
       return;
     }
-    toast.success("Password updated successfully");
-    setShowPw(false);
-    setPw({ old: "", new1: "", new2: "" });
-    if (onAddLog) onAddLog("Password updated");
+
+    try {
+      // Sending old and new password. Adjust keys if your backend expects different names.
+      await axiosapiinstance.post(ENDPOINTS.AUTH.RESET_PASSWORD, {
+        old_password: pw.old,
+        new_password: pw.new1
+      });
+      
+      toast.success("Password updated successfully");
+      setShowPw(false);
+      setPw({ old: "", new1: "", new2: "" });
+      if (onAddLog) onAddLog("Password updated");
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.response?.data?.detail || "Failed to update password");
+    }
   };
 
   const handleLogoutDev = (id) => {

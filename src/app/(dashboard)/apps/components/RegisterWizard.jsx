@@ -5,6 +5,8 @@ import { ArrowLeft, Lock, ChevronDown, Check, RefreshCw, Upload, ShieldCheck, Al
 import { cn } from "@/lib/utils";
 import Tooltip from "@/components/ui/Tooltip";
 import { MultiSelect, MultiSelectScroll } from "@/components/ui/MultiSelect";
+import { useGoogleLogin } from "@react-oauth/google";
+import { toast } from "sonner";
 
 export default function RegisterWizard({
   ssp,
@@ -39,6 +41,13 @@ export default function RegisterWizard({
   GENDERS,
   LOCATIONS
 }) {
+  const login = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
+      startFetch(tokenResponse.access_token);
+    },
+    onError: () => toast.error("Google login failed")
+  });
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header */}
@@ -78,25 +87,17 @@ export default function RegisterWizard({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1.5">Secret Authorization Key <Tooltip text="The secret API token found in your SSP developer settings dashboard." /></label>
-            <input 
-              type="text"
-              placeholder="sk-live-..."
-              className="w-full bg-[#1A1F2B] border border-[#2A3447] rounded-xl px-4 py-2.5 text-sm text-foreground focus:ring-1 focus:ring-brand outline-none font-mono"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-            />
+            <label className="block text-xs font-semibold text-slate-400 mb-1.5">&nbsp;</label>
+            <button
+              onClick={() => login()}
+              disabled={fetching || !ssp}
+              className="w-full bg-brand disabled:opacity-50 hover:opacity-90 transition-all text-white font-semibold text-sm h-[42px] rounded-xl flex items-center justify-center gap-2 cursor-pointer border-none outline-none"
+            >
+              {fetching ? <RefreshCw size={14} className="animate-spin" /> : <Globe size={16} />}
+              <span>Fetch Apps from Google</span>
+            </button>
           </div>
         </div>
-
-        <button
-          onClick={startFetch}
-          disabled={fetching || !ssp || !apiKey}
-          className="bg-brand disabled:opacity-50 hover:opacity-90 transition-all text-white font-semibold text-xs px-5 py-2.5 rounded-xl flex items-center gap-2 cursor-pointer border-none outline-none"
-        >
-          {fetching ? <RefreshCw size={14} className="animate-spin" /> : null}
-          <span>Fetch Applications</span>
-        </button>
 
         {/* Fetching Progress indicators */}
         {fetchStep > 0 && fetchStep < 4 && (

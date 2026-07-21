@@ -5,6 +5,8 @@ import AuthCard from '@/components/auth/AuthCard';
 import InputField from '@/components/auth/InputField';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { axiosapiinstance } from '@/lib/request';
+import { ENDPOINTS } from '@/lib/endpoints';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -18,7 +20,7 @@ export default function ForgotPasswordPage() {
       );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateEmail(email)) {
@@ -26,8 +28,13 @@ export default function ForgotPasswordPage() {
       return;
     }
 
-    toast.success('Reset link sent to your email!');
-    setIsSent(true);
+    try {
+      await axiosapiinstance.post(ENDPOINTS.AUTH.PASSWORD_RECOVERY, { email });
+      toast.success('Reset link sent to your email!');
+      setIsSent(true);
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.response?.data?.detail || "Failed to send reset link");
+    }
   };
 
   if (isSent) {
